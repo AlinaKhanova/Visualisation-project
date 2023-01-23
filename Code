@@ -1,0 +1,171 @@
+---
+title: "Project"
+author: "Alina Khanova"
+output: html_document
+date: "2023-01-17"
+---
+```{r}
+library(psych)
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(RColorBrewer)
+library(ggforce)
+library(geomtextpath)
+library(shiny)
+```
+
+```{r}
+hotel<-read_delim("D:\\hotel_booking.csv")
+head(hotel,5)
+```
+
+```{r}
+describe(hotel)
+```
+
+
+```{r}
+ggplot(hotel, aes(x = hotel, fill = customer_type)) +
+geom_bar(stat = "count", color="black") +
+  labs(x= "Hotel Type",y= "Number of Bookings", title ="Types of Booked Hotels") +
+facet_grid( space = "free", scales = "free_y") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal() + theme(legend.position="bottom")
+```
+
+```{r}
+hotel$is_canceled <- as.factor(hotel$is_canceled)
+ggplot(hotel, aes(x = is_canceled, fill = hotel)) +
+geom_bar(position = "dodge", color="black")+coord_polar()+
+  labs(x= "Is canceled - 1",y= "Count", title ="Number of Canceled Bookings and None") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal() + theme(legend.position="bottom")
+```
+
+
+```{r}
+ggplot(hotel, aes(x = is_canceled, fill = customer_type)) +
+geom_bar(position = "dodge", color="black") +
+  labs(x= "is canceled",y= "Number of Bookings", title ="Number of Canceled Bookings by Сustomer Type" , caption ="NO                                                                                                                     YES")+
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal() + theme(legend.position="bottom")
+```
+
+```{r}
+grid.arrange(ggplot(hotel, aes(x = stays_in_weekend_nights, fill = hotel)) +
+geom_bar(aes(y = stat(count)/ sum(count)), color="black")+
+facet_grid( space = "free", scales = "free_y") +
+  labs(x= "Nights Stayed in Weekends",y= "%", title ="The ratio of the number of days spent in the hotel") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal(),
+ggplot(hotel, aes(x = stays_in_week_nights, fill = hotel)) +
+geom_bar(aes(y = stat(count)/ sum(count)), color="black")+
+facet_grid( space = "free", scales = "free_y") +
+  labs(x= "Nights Stayed in Week Days",y= "%") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal() + theme(legend.position="none"))
+```
+
+```{r}
+ggplot(hotel[hotel$adr<1000,]) +
+geom_boxplot(aes(y = adr, x = customer_type, fill = hotel))+
+  labs(x= "Type of Customer",y= "adr (usd)", title ="Average Daily Rate Based on Customer Type") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal()
+
+```
+
+
+```{r}
+ggplot(hotel[hotel$adr<1000,], aes(x = adr)) +
+geom_histogram(bins = 35, 
+               aes(y = stat(density)))+
+geom_density( colour = "red", size =1.3, alpha = 0.7)+
+  labs(x= "adr (usd)",y="", title ="The Distribution of the Cost of a Night in Hotels") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal()
+```
+
+```{r}
+ggplot(hotel[hotel$adr<1000,], aes(x = adr, fill = hotel)) +
+geom_histogram(bins = 35,
+              alpha = 0.7,
+              position = "identity", color="black") +
+  geom_density() +
+  labs(x="adr (usd)", title ="The Distribution of the Cost of a Night Depending on the Hotel") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal() + theme(legend.position="bottom")
+```
+```{r}
+ggplot(hotel[hotel$adr<1000,], aes(x = adr, fill = assigned_room_type)) +
+geom_histogram(bins = 35,
+              aes(y = stat(density)),
+              alpha = 0.7,
+              position = "identity") +
+  labs(x = "adr (usd)",y="", title ="The Distribution of the Cost of a Night Depending on the Room Type") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal() + theme(legend.position="bottom")
+```
+
+```{r}
+grid.arrange(ggplot(hotel, aes(x = reserved_room_type,y = assigned_room_type)) +
+geom_jitter(alpha = 0.2, shape = 1)+
+  labs(x= "Reserved Room Type",y= "Assigned Room Type", title ="Difference Between Reserved and Assigned Room") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal(), ggplot(hotel, aes(x = reserved_room_type,y = assigned_room_type)) +
+geom_count()+
+  labs(x= "Reserved Room Type",y= "Assigned Room Type", title ="Difference Between Reserved and Assigned Room") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal()+ theme(legend.position="bottom") ,nrow=1)
+```
+
+```{r}
+ggplot(hotel[hotel$adr<1000,], aes(x = reservation_status, y=adr, fill = hotel, colour = hotel)) + geom_violin(trim = FALSE) +
+  geom_violin(alpha = 0.7, trim = FALSE, color="black")+
+geom_point(position = position_jitterdodge(dodge.width = 0.9),
+           alpha = 0.005,
+           color="black",
+          show.legend = FALSE) +
+  labs(x= "Reservation Status",y= "adr (usd)", title ="Distribution of Canceled and Completed Bookings") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal()
+```
+
+```{r}
+hotel$arrival_date_month <- factor(hotel$arrival_date_month, levels = month.name)
+
+ggplot(hotel[hotel$adr<1000,], aes(x = hotel, y = adr)) + geom_bar(aes(fill = arrival_date_month), stat = "identity",
+             position = "dodge") +
+  labs(x= "Hotel",y= "adr (usd)", title ="Comparing Price Monthly") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal()
+```
+
+```{r}
+hotel[hotel$adr<1000,] |>
+ggplot(aes(x = lead_time,
+y = adr, colour = hotel)) +
+geom_point(alpha = 0.05, size = 0.2) +
+geom_smooth(method = "lm", size = 1.1, values=c("red", "black")) +
+  facet_grid(customer_type ~ .)+
+  labs(x= "Lead Time",y= "adr (usd)", title ="Price Per Night Over Hotel Type and Client Type") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal()
+```
+```{r}
+hotel[hotel$adr<1000,] |>
+ggplot(aes(x = lead_time,
+y = adr, colour = hotel)) +
+geom_point(aes(color = hotel))+
+  ggforce::geom_mark_ellipse(
+    aes(fill = hotel, label = hotel), alpha = 0,
+    show.legend = FALSE)+
+  facet_grid(customer_type ~ .)+
+  scale_x_continuous(breaks = seq(-10, 800, by = 100), limits = c(-10, 800))+
+  scale_y_continuous(breaks = seq(-10, 600, by =100), limits = c(-10, 600))+
+  labs(x= "Lead Time",y= "adr (usd)", title ="Price Per Night Over Hotel Type and Client Type") +
+scale_fill_brewer(palette = "YlOrRd")+
+  theme_minimal()
+```
+
